@@ -1,0 +1,32 @@
+Speaker Notes
+
+Good afternoon everyone. We are group 6. Today we will briefly introduce our term project "Bayesian Multilevel Analysis of Housing Prices in Major Ontario Cities"
+How do interest rates, international student enrollment, and housing supply interact to drive housing prices across major Ontario cities?
+
+Background and Motivation
+Housing affordability has become one of the most important economic issues in Canada in recent years. Over the past few years, the Bank of Canada has made significant adjustments to its policy interest rate, leading to substantial changes in mortgage costs and housing demand. Furthermore, Canada reduced international student permits recently to stabilize housing prices, which surged during the pandemic—a trend many attribute to high immigration levels. Does this strategy actually work, and if so, to what extent? Meanwhile, different cities may react differently depending on their local demand pressures and housing construction activity. Therefore, understanding both shared macroeconomic effects and city-specific responses can provide a clearer statistical picture of housing price dynamics.
+
+Data Sources
+We decide to construct a longitudinal panel dataset covering the six largest Census Metropolitan Areas in Ontario: Toronto, Ottawa-Gatineau, Hamilton, Kitchener-Cambridge-Waterloo, London, and St. Catharines-Niagara. The observation window spans from 2016 to 2024, allowing the analysis to capture different interest rate regimes.
+
+The main outcome variable is the monthly housing price index by city, obtained from Statistics Canada. We will use the logarithm to interpret estimated coefficients as approximate percentage changes and improve modeling stability.
+
+There are three main predictors:
+The Bank of Canada policy interest rate, aggregated to monthly averages to represent national monetary policy conditions.
+The number of international study permits, from IRCC open data, which serves as a proxy for international student inflows and housing demand.
+Housing starts data from CMHC and Statistics Canada, used as a proxy for local housing supply.
+
+
+
+Bayesian Model and Expected Outputs
+To analyze this question, we will use a Bayesian multilevel regression model. Our data comes from multiple cities observed over time. These cities share some common factors, like the national interest rate, but they may still respond differently depending on their own housing markets. A multilevel model allows us to handle this situation.
+It estimates overall effects that are shared across all cities, while also allowing each city to have its own variation around those effects. This approach is called partial pooling, and it helps us avoid treating all cities as identical while still using information from the full dataset.
+
+In our model, the dependent variable will be the log of the housing price index. The predictors include the policy interest rate, international student inflows, and housing starts, which represent housing supply.
+
+We will estimate the model using Bayesian methods with weakly informative priors, and we will check model performance using convergence diagnostics and posterior predictive checks.
+
+We expect to produce several main results from this model:
+First, we will estimate the posterior effects of interest rates, student inflows, and housing supply on housing prices.
+Second, we will examine city-level differences, showing how strongly different housing markets respond to these factors.
+Finally, we will use posterior predictions to evaluate how well the model explains the observed housing price trends.
