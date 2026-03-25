@@ -3,7 +3,7 @@
 /.Ruserdata
 /.Rproj.user/
 
-/data/clean/
-/output/
+#/data/clean/
+#/output/
 
 *.Rproj
