@@ -1,46 +1,101 @@
 # Housing Price Analysis in Major Ontario Cities
 
-This project builds a city-by-month panel for six Ontario CMAs from `2016-01` to `2024-12` and fits a Bayesian multilevel model for `log(price_index)`.
+This project builds an annual city-year panel for six Ontario CMAs (2016–2023) and fits two competing Bayesian multilevel models to study how international student enrolment, the Bank of Canada policy rate, and housing supply interact to drive housing prices.
 
-## Local data choices
+## Research question
 
-- Housing prices: `data/data_raw/Housing_price_index.csv` (Statistics Canada NHPI).
-- Policy rate: `data/data_raw/Interest_rate.csv`, which contains the daily overnight-rate target series and is aggregated to monthly means.
-- International student enrolment: `data/data_raw/International_students.csv` (StatCan table 37-10-0232-01 — "Postsecondary enrolments by institution"). Annual count of international students enrolled per CMA, covering 2015/2016–2023/2024. Suppressed values (`..`) are imputed: leading years before an institution existed are set to 0; interior gaps are filled with the institution's mean across available years.
-- Housing starts: `data/data_raw/New_houses_built.csv`, which now contains the six target city geographies directly and is merged at the city-month level.
+How do interest rates, international student enrolment, and housing supply interact to drive housing prices across major Ontario cities?
+
+## Data sources
+
+| File | Contents | Aggregation |
+|---|---|---|
+| `Housing_price_index.csv` | Statistics Canada NHPI (18-10-0205-01) | Monthly → annual mean |
+| `Interest_rate.csv` | Bank of Canada daily overnight-rate target | Daily → annual mean |
+| `International_students.csv` | StatCan 37-10-0232-01 — postsecondary enrolment by institution | Annual sum per CMA |
+| `New_houses_built.csv` | CMHC housing starts by CMA | Monthly → annual sum |
+
+**Suppressed values (`..`) in the international students file** are imputed: years before an institution existed are set to 0; interior gaps are filled with the institution's mean across available years.
+
+## Panel structure
+
+- **Unit of analysis:** city × year
+- **Cities:** Toronto, Ottawa-Gatineau, Hamilton, Kitchener-Cambridge-Waterloo, London, St. Catharines-Niagara
+- **Years:** 2016–2023 (upper bound set by the international students data)
+- **Observations:** 48 (6 cities × 8 years)
+- **Outcome:** `log(HPI)` — log of the annual mean New Housing Price Index
+
+## Models
+
+**Model 1 (Base)**
+```
+log_hpi ~ scale(intl_students) + policy_rate + (1 + scale(intl_students) | cma)
+```
+Estimates the baseline effect of international student enrolment on log(HPI) with a varying intercept and varying student slope per CMA.
+
+**Model 2 (Supply-Adjusted)**
+```
+log_hpi ~ scale(intl_students) + policy_rate + scale(house_supply) + (1 + scale(intl_students) | cma)
+```
+Adds housing starts as a supply-side control. Comparing the `scale(intl_students)` coefficient between Model 1 and Model 2 is the key test for omitted variable bias.
+
+**Priors**
+
+| Parameter | Prior | Rationale |
+|---|---|---|
+| Intercept | `normal(4.8, 0.5)` | log(HPI) spans 4.57–5.15; weakly informative anchor |
+| `scale(intl_students)` | `skew_normal(0.1, 0.1, 3)` | Slight positive prior (demand hypothesis); data can override |
+| `policy_rate`, `scale(house_supply)` | `normal(0, 0.5)` | Weakly informative, no directional assumption |
+| Group-level SD | `exponential(1)` | Controls shrinkage across 6 CMAs |
+| Residual SD | `exponential(1)` | |
+| Intercept-slope correlation | `lkj(2)` | Mild regularisation |
 
 ## Project structure
 
-- `data/data_raw/`: original local source files.
-- `data/clean/`: cleaned source tables and the merged panel dataset.
-- `output/model/`: fitted model object and text summaries.
-- `output/tables/`: posterior summary tables and panel missingness.
-- `output/figures/`: trace plots, posterior predictive checks, and city-effect plots.
-- `output/notes/`: source and harmonization notes.
+```
+data/
+  data_raw/       original source files
+  clean/          cleaned tables and merged panel (panel_city_year.csv)
+output/
+  eda/            EDA report and city x year tables
+  model/          fitted model RDS files and specification note
+  loo/            LOO results, pointwise ELPD boxplot, comparison report
+  ppc/            posterior predictive check plots and interpretation guide
+  notes/          source and harmonization notes
+  tables/         panel missingness table
+```
 
 ## Scripts
 
-- `01_inspect_files.R`: inventory the local files and summarize which sources are usable.
-- `02_clean_each_source.R`: clean each source and save intermediate datasets.
-- `03_build_panel.R`: merge the cleaned sources into a city-by-month panel.
-- `04_fit_bayesian_model.R`: fit the Bayesian multilevel model in `brms` with random intercepts by city and a random slope for housing supply by city.
-- `05_diagnostics_and_outputs.R`: create posterior summaries, convergence diagnostics, and posterior predictive checks.
+| Script | Purpose |
+|---|---|
+| `01_inspect_files.R` | Inventory raw files and document their structure |
+| `02_clean_each_source.R` | Clean each source and save to `data/clean/` |
+| `03_build_panel.R` | Merge cleaned sources into `panel_city_year.csv` |
+| `04_exploratory_data_analysis.R` | EDA report: distributions, trends, correlations, missingness |
+| `05_fit_models.R` | Fit Model 1 and Model 2 in brms |
+| `06_loo_comparison.R` | LOO-CV, pointwise diagnostics by CMA, model comparison |
+| `07_posterior_predictive_checks.R` | PPC interval plots grouped by CMA |
 
 ## Run order
-
-Run the scripts from the project root in this order:
 
 ```r
 source("01_inspect_files.R")
 source("02_clean_each_source.R")
 source("03_build_panel.R")
-source("04_fit_bayesian_model.R")
-source("05_diagnostics_and_outputs.R")
+source("04_exploratory_data_analysis.R")
+source("05_fit_models.R")
+source("06_loo_comparison.R")
+source("07_posterior_predictive_checks.R")
 ```
 
-## Notes
+## Known limitations
 
-- The outcome is `log(price_index)`.
-- The policy-rate series is daily in `Interest_rate.csv`, so it is converted to monthly means to align with the monthly housing-price series.
-- The housing-starts file now contains city-specific series for the six target geographies, so housing supply is merged directly at the city-month level.
-- `brms`, `rstan`, `posterior`, and `bayesplot` are installed locally and the pipeline now uses them directly.
+- **Small panel (n = 48):** Only 8 time points per city limits the precision of city-level slope estimates.
+- **LOO Pareto-k diagnostics:** After moment matching, 2–3 observations retain Pareto-k > 0.7, indicating those specific city-years are highly influential. With only 48 observations this is expected. The LOO comparison conclusion is not materially affected, but exact leave-one-out refitting (`reloo = TRUE`) was omitted due to the computational cost.
+- **Annual aggregation:** International student data is only available annually, so the entire panel operates at annual frequency. Monthly variation in housing prices and the policy rate is averaged out.
+- **CMA mapping:** International student counts are aggregated from institution-level data using a manual CMA lookup. Institutions not in the lookup are dropped.
+
+## Dependencies
+
+`brms`, `rstan`, `ggplot2` — install via `install.packages(c("brms", "rstan", "ggplot2"))`.
