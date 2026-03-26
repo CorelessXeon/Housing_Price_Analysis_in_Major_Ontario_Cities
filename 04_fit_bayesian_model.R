@@ -15,11 +15,10 @@ if (!requireNamespace("brms", quietly = TRUE)) {
   stop("The brms package is not available. Install it before running 04_fit_bayesian_model.R.")
 }
 
-panel <- read.csv(file.path(clean_root, "panel_city_month.csv"), stringsAsFactors = FALSE)
-panel$date <- as.Date(panel$date)
+panel <- read.csv(file.path(clean_root, "panel_city_year.csv"), stringsAsFactors = FALSE)
 
-predictors <- c("policy_rate_z", "study_permit_inflow_proxy_z", "housing_starts_z")
-model_data <- panel[, c("date", "city", "log_price_index", predictors)]
+predictors <- c("policy_rate_z", "intl_students_z", "housing_starts_z")
+model_data <- panel[, c("year", "city", "log_price_index", predictors)]
 model_data <- model_data[stats::complete.cases(model_data), ]
 if (nrow(model_data) == 0) {
   stop("No complete rows were available for model fitting.")
@@ -29,7 +28,7 @@ model_data$city <- factor(model_data$city)
 intercept_location <- round(mean(model_data$log_price_index), 3)
 
 model_formula <- brms::bf(
-  log_price_index ~ policy_rate_z + study_permit_inflow_proxy_z + housing_starts_z + (1 + housing_starts_z | city)
+  log_price_index ~ policy_rate_z + intl_students_z + housing_starts_z + (1 + housing_starts_z | city)
 )
 
 priors <- c(
@@ -66,7 +65,8 @@ model_spec_lines <- c(
   "===================",
   "Package: brms",
   "Backend: rstan",
-  "Formula: log_price_index ~ policy_rate_z + study_permit_inflow_proxy_z + housing_starts_z + (1 + housing_starts_z | city)",
+  "Formula: log_price_index ~ policy_rate_z + intl_students_z + housing_starts_z + (1 + housing_starts_z | city)",
+  "Note: intl_students_z is the standardised annual international student enrolment count per CMA (StatCan 37-10-0232-01), merged by year onto the monthly panel.",
   sprintf("Observations used: %d", nrow(model_data)),
   sprintf("Cities used: %d", length(unique(model_data$city))),
   "Priors:",
@@ -79,7 +79,7 @@ model_spec_lines <- c(
   )),
   "",
   "Notes:",
-  "- Housing starts came from 3410015601-eng.csv.",
+  "- Housing starts came from New_houses_built.csv.",
   "- The current local CMHC export contains city-specific housing-starts blocks for the six target geographies.",
   "- Because brms and rstan are installed locally, this script now uses brms instead of the earlier custom Gibbs sampler."
 )

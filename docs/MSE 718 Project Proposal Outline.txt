@@ -4,7 +4,7 @@ Bayesian Multilevel Analysis of Housing Prices in Major Ontario Cities
 Background and Motivation
 	Housing affordability has become a major issue in Canada
 	Interest rate changes from the Bank of Canada affect housing demand
-	Growing international student inflows increase housing demand
+	Growing international student enrolment increases housing demand
 	New housing supply varies across cities
 	Housing markets respond differently across Ontario cities
 
@@ -18,7 +18,7 @@ Data Sources
 			log - percentage (%) changes
 	Main Predictors
 		Bank of Canada policy interest rate
-		international study permits (proxy for student inflows)
+		international student enrolment by CMA (StatCan table 37-10-0232-01)
 		Housing starts (proxy for housing supply)
 Bayesian Model and Expected Outputs
 	Bayesian multilevel regression model

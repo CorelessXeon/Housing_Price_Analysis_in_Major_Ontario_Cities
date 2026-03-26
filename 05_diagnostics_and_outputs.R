@@ -84,7 +84,7 @@ write.csv(diagnostics_df, file.path(table_root, "all_parameter_diagnostics.csv")
 
 trace_parameters <- c(
   "b_policy_rate_z",
-  "b_study_permit_inflow_proxy_z",
+  "b_intl_students_z",
   "b_housing_starts_z",
   "sigma"
 )

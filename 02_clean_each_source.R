@@ -28,7 +28,7 @@ extract_lookup_daily <- function(csv_path) {
   lines <- readLines(csv_path, warn = FALSE)
   header_line <- grep("^Date,V39079,?\\s*$", trimws(lines))[1]
   if (is.na(header_line)) {
-    stop("Could not find the Date,V39079 header in lookup.csv.")
+    stop("Could not find the Date,V39079 header in Interest_rate.csv.")
   }
   data_lines <- trimws(lines[(header_line + 1):length(lines)])
   data_lines <- data_lines[grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2},", data_lines)]
@@ -88,7 +88,7 @@ extract_housing_starts_series <- function(raw, geography_pattern, city_name) {
     city = city_name,
     housing_starts = parse_numeric_flagged(values[keep]),
     series_label = "Total units",
-    source = "3410015601-eng.csv",
+    source = "New_houses_built.csv",
     stringsAsFactors = FALSE
   )
 }
@@ -114,6 +114,10 @@ extract_housing_starts_data <- function(csv_path) {
   )
 }
 
+# =============================================================================
+# SETUP
+# =============================================================================
+
 project_root <- "."
 raw_root <- file.path(project_root, "data", "data_raw")
 clean_root <- file.path(project_root, "data", "clean")
@@ -132,8 +136,13 @@ target_cities <- c(
   "St. Catharines-Niagara"
 )
 
+# =============================================================================
+# 1. HOUSING PRICE INDEX  (Housing_price_index.csv -> housing_prices_annual.csv)
+# Aggregation: annual mean of monthly price index values per city.
+# =============================================================================
+
 nhpi_raw <- read.csv(
-  file.path(raw_root, "1810020501-eng.csv"),
+  file.path(raw_root, "Housing_price_index.csv"),
   skip = 7,
   header = FALSE,
   check.names = FALSE,
@@ -152,111 +161,163 @@ nhpi_clean <- do.call(
   )
 )
 nhpi_clean <- nhpi_clean[nhpi_clean$date >= panel_start & nhpi_clean$date <= panel_end, ]
-nhpi_clean <- nhpi_clean[order(nhpi_clean$city, nhpi_clean$date), ]
-write.csv(nhpi_clean, file.path(clean_root, "housing_prices_monthly.csv"), row.names = FALSE)
+nhpi_clean$year <- as.integer(format(nhpi_clean$date, "%Y"))
 
-policy_daily <- extract_lookup_daily(file.path(raw_root, "lookup.csv"))
-policy_daily$month <- as.Date(format(policy_daily$Date, "%Y-%m-01"))
-policy_monthly <- aggregate(V39079 ~ month, data = policy_daily, FUN = mean)
-names(policy_monthly) <- c("date", "policy_rate")
-policy_monthly$source <- "lookup.csv"
-policy_monthly <- policy_monthly[policy_monthly$date >= panel_start & policy_monthly$date <= panel_end, ]
+housing_prices_annual <- aggregate(price_index ~ year + city, data = nhpi_clean, FUN = mean)
+housing_prices_annual <- housing_prices_annual[order(housing_prices_annual$city, housing_prices_annual$year), ]
+write.csv(housing_prices_annual, file.path(clean_root, "housing_prices_annual.csv"), row.names = FALSE)
 
-write.csv(
-  data.frame(date = policy_daily$Date, policy_rate = policy_daily$V39079),
-  file.path(clean_root, "policy_rate_daily.csv"),
-  row.names = FALSE
-)
-write.csv(policy_monthly, file.path(clean_root, "policy_rate_monthly.csv"), row.names = FALSE)
+# =============================================================================
+# 2. INTEREST RATE  (Interest_rate.csv -> policy_rate_annual.csv)
+# Aggregation: annual mean of daily values.
+# =============================================================================
+
+policy_daily <- extract_lookup_daily(file.path(raw_root, "Interest_rate.csv"))
+policy_daily$year <- as.integer(format(policy_daily$Date, "%Y"))
+policy_daily <- policy_daily[policy_daily$year >= as.integer(format(panel_start, "%Y")) &
+                               policy_daily$year <= as.integer(format(panel_end,   "%Y")), ]
+
+policy_rate_annual <- aggregate(V39079 ~ year, data = policy_daily, FUN = mean)
+names(policy_rate_annual) <- c("year", "policy_rate")
+write.csv(policy_rate_annual, file.path(clean_root, "policy_rate_annual.csv"), row.names = FALSE)
 
 policy_note <- c(
   "Policy-rate note",
   "================",
-  "Source: data/data_raw/lookup.csv",
+  "Source: data/data_raw/Interest_rate.csv",
   sprintf("Daily observations extracted: %d", nrow(policy_daily)),
   sprintf("Daily date range: %s to %s", format(min(policy_daily$Date), "%Y-%m-%d"), format(max(policy_daily$Date), "%Y-%m-%d")),
-  "Monthly aggregation: arithmetic mean within each month."
+  "Annual aggregation: arithmetic mean of all daily values within each calendar year."
 )
 writeLines(policy_note, file.path(notes_root, "policy_rate_note.txt"))
 
-study_proxy <- read.csv(
-  file.path(raw_root, "student_permits_city_proxy_2015_2025_monthly.csv"),
+# =============================================================================
+# 3. INTERNATIONAL STUDENTS  (International_students.csv -> intl_students_annual.csv)
+# Source: StatCan table 37-10-0232-01 — Postsecondary enrolments by institution.
+# Each row in the raw file = one institution with its total international student enrolment.
+# Institution names are stripped of ", Ontario [footnote]" suffix before CMA matching.
+# For academic years (e.g. "2023 / 2024") the lower year (2023) is used as the year value.
+# =============================================================================
+
+intl_raw <- read.csv(
+  file.path(raw_root, "International_students.csv"),
+  header = TRUE,
   check.names = FALSE,
-  stringsAsFactors = FALSE
+  stringsAsFactors = FALSE,
+  fileEncoding = "UTF-8"
 )
-study_proxy$date <- as.Date(study_proxy$date)
-study_proxy <- study_proxy[study_proxy$city %in% c(
-  "Toronto",
-  "Ottawa",
-  "Hamilton",
-  "Kitchener-Cambridge-Waterloo",
-  "London"
-), ]
-study_proxy$city[study_proxy$city == "Ottawa"] <- "Ottawa-Gatineau"
-study_proxy$study_permit_inflow_proxy <- as.numeric(study_proxy$study_permit_inflow_proxy)
-study_proxy$source <- "student_permits_city_proxy_2015_2025_monthly.csv"
+names(intl_raw)[1] <- "institution"
 
-study_raw <- read.csv(
-  file.path(raw_root, "study permits.csv"),
-  check.names = FALSE,
-  stringsAsFactors = FALSE
-)
-st_cath_institutions <- c(
-  "Brock University",
-  "Niagara College Canada",
-  "University of Niagara Falls Canada"
-)
-st_cath_raw <- study_raw[
-  study_raw$EN_DLI_PROVINCE_TERRITORY == "Ontario" &
-    study_raw$EN_DESIGNATED_LEARNING_INSTITUTION %in% st_cath_institutions,
-]
-st_cath_raw$TOTAL_numeric <- suppressWarnings(as.numeric(st_cath_raw$TOTAL))
-st_cath_raw$date <- as.Date(sprintf(
-  "%04d-%02d-01",
-  as.integer(st_cath_raw$EN_YEAR),
-  month_number(st_cath_raw$EN_MONTH)
-))
-st_cath_clean <- aggregate(TOTAL_numeric ~ date, data = st_cath_raw, FUN = sum_or_na)
-names(st_cath_clean)[2] <- "study_permit_inflow_proxy"
-st_cath_clean$city <- "St. Catharines-Niagara"
-st_cath_clean$source <- "study permits.csv supplement"
+# Filter to Ontario institutions and clean names
+intl_raw <- intl_raw[grepl(",\\s*Ontario", intl_raw$institution), ]
+intl_raw$institution <- trimws(sub("\\s+[0-9]+(\\s+[0-9]+)*\\s*$", "",
+                                   sub(",\\s*Ontario.*$", "", intl_raw$institution)))
 
-student_clean <- rbind(
-  study_proxy[, c("date", "city", "study_permit_inflow_proxy", "source")],
-  st_cath_clean[, c("date", "city", "study_permit_inflow_proxy", "source")]
+# Assign CMA
+cma_overrides_intl <- c(
+  "Brock University"                                               = "St. Catharines-Niagara",
+  "Carleton University"                                            = "Ottawa-Gatineau",
+  "Collège dominicain de philosophie et de théologie"              = "Ottawa-Gatineau",
+  "McMaster University"                                            = "Hamilton",
+  "University of Ottawa-Université d'Ottawa"                       = "Ottawa-Gatineau",
+  "Toronto Metropolitan University"                                = "Toronto",
+  "University of Toronto"                                          = "Toronto",
+  "University of Waterloo"                                         = "Kitchener-Cambridge-Waterloo",
+  "Western University"                                             = "London",
+  "Wilfrid Laurier University"                                     = "Kitchener-Cambridge-Waterloo",
+  "York University"                                                = "Toronto",
+  "OCAD University"                                                = "Toronto",
+  "Ontario Tech University"                                        = "Toronto",
+  "Université de l'Ontario français"                               = "Toronto",
+  "La Cité collégiale d'arts appliqués et de technologie"          = "Ottawa-Gatineau",
+  "Algonquin College of Applied Arts and Technology"               = "Ottawa-Gatineau",
+  "Centennial College of Applied Arts and Technology"              = "Toronto",
+  "Conestoga College Institute of Technology and Advanced Learning" = "Kitchener-Cambridge-Waterloo",
+  "Fanshawe College of Applied Arts and Technology"                = "London",
+  "George Brown College of Applied Arts and Technology"            = "Toronto",
+  "Mohawk College of Applied Arts and Technology"                  = "Hamilton",
+  "Niagara College of Applied Arts and Technology"                 = "St. Catharines-Niagara",
+  "Humber College Institute of Technology and Advanced Learning"   = "Toronto",
+  "Seneca College of Applied Arts and Technology"                  = "Toronto",
+  "Sheridan College Institute of Technology and Advanced Learning"  = "Toronto"
 )
-student_clean <- student_clean[
-  student_clean$date >= panel_start & student_clean$date <= panel_end &
-    student_clean$city %in% target_cities,
-]
-student_clean <- student_clean[order(student_clean$city, student_clean$date), ]
-write.csv(student_clean, file.path(clean_root, "student_inflows_monthly.csv"), row.names = FALSE)
+intl_raw$cma <- cma_overrides_intl[intl_raw$institution]
+intl_raw$cma[is.na(intl_raw$cma)] <- "Other"
+intl_raw <- intl_raw[intl_raw$cma != "Other", ]
 
-student_note <- c(
-  "Student inflow note",
-  "===================",
-  "Main source: student_permits_city_proxy_2015_2025_monthly.csv",
-  "Supplement: study permits.csv for St. Catharines-Niagara only.",
-  paste("Supplement institutions:", paste(st_cath_institutions, collapse = ", ")),
-  "TODO: some Niagara-named institutions are geographically ambiguous and were not added automatically."
-)
-writeLines(student_note, file.path(notes_root, "student_inflow_note.txt"))
+# Year columns: names like "2015 / 2016"; lower year used as the integer year value
+year_cols <- setdiff(names(intl_raw), c("institution", "cma"))
 
-housing_starts_clean <- extract_housing_starts_data(file.path(raw_root, "3410015601-eng.csv"))
+# Parse all year columns: remove thousand commas, ".." -> NA
+for (col in year_cols) {
+  intl_raw[[col]] <- suppressWarnings(
+    as.numeric(gsub(",", "", ifelse(trimws(intl_raw[[col]]) == "..", NA_character_, intl_raw[[col]])))
+  )
+}
+
+# Impute ".." values:
+#   Leading NAs (before the first observed value) -> 0  (institution did not yet exist)
+#   Interior / trailing NAs                        -> institution mean (StatCan suppression)
+for (i in seq_len(nrow(intl_raw))) {
+  vals      <- as.numeric(intl_raw[i, year_cols])
+  first_obs <- which(!is.na(vals))[1]
+  row_mean  <- mean(vals, na.rm = TRUE)
+  na_idx    <- which(is.na(vals))
+
+  leading  <- if (is.na(first_obs)) na_idx else na_idx[na_idx < first_obs]
+  interior <- if (is.na(first_obs)) integer(0) else na_idx[na_idx >= first_obs]
+
+  intl_raw[i, year_cols[leading]]  <- 0
+  intl_raw[i, year_cols[interior]] <- row_mean
+}
+
+# Reshape to long and extract integer year from "YYYY / YYYY" label
+intl_long <- do.call(rbind, lapply(year_cols, function(col) {
+  data.frame(
+    cma     = intl_raw$cma,
+    year    = as.integer(trimws(sub("\\s*/.*", "", col))),
+    total_n = intl_raw[[col]],
+    stringsAsFactors = FALSE
+  )
+}))
+
+# Drop rows still NA (institution had ".." in every year — nothing to impute from)
+intl_long <- intl_long[!is.na(intl_long$total_n), ]
+
+# Filter to panel years and aggregate by CMA + year
+intl_long <- intl_long[intl_long$year >= as.integer(format(panel_start, "%Y")) &
+                        intl_long$year <= as.integer(format(panel_end,   "%Y")), ]
+
+intl_students_clean <- aggregate(total_n ~ cma + year, data = intl_long, FUN = sum)
+names(intl_students_clean)[3] <- "intl_students"
+intl_students_clean <- intl_students_clean[order(intl_students_clean$cma, intl_students_clean$year), ]
+
+write.csv(intl_students_clean, file.path(clean_root, "intl_students_annual.csv"), row.names = FALSE)
+
+# =============================================================================
+# 4. HOUSING STARTS  (New_houses_built.csv -> housing_starts_annual.csv)
+# Aggregation: annual sum of monthly housing starts per city (starts are a flow variable).
+# =============================================================================
+
+housing_starts_clean <- extract_housing_starts_data(file.path(raw_root, "New_houses_built.csv"))
 housing_starts_clean <- housing_starts_clean[
   housing_starts_clean$date >= panel_start & housing_starts_clean$date <= panel_end,
 ]
-housing_starts_clean <- housing_starts_clean[order(housing_starts_clean$city, housing_starts_clean$date), ]
-write.csv(housing_starts_clean, file.path(clean_root, "housing_starts_monthly.csv"), row.names = FALSE)
+housing_starts_clean$year <- as.integer(format(housing_starts_clean$date, "%Y"))
+
+housing_starts_annual <- aggregate(housing_starts ~ year + city, data = housing_starts_clean, FUN = sum)
+housing_starts_annual <- housing_starts_annual[order(housing_starts_annual$city, housing_starts_annual$year), ]
+write.csv(housing_starts_annual, file.path(clean_root, "housing_starts_annual.csv"), row.names = FALSE)
 
 housing_note <- c(
   "Housing starts note",
   "===================",
-  "Source: data/data_raw/3410015601-eng.csv",
+  "Source: data/data_raw/New_houses_built.csv",
   "Series used: Total units",
-  "Geography available in the local export: Hamilton, Kitchener-Cambridge-Waterloo, London, Ottawa-Gatineau, St. Catharines-Niagara, Toronto",
-  "The CMHC file now contains city-specific housing starts for the six target geographies, so housing_starts is merged directly at the city-month level."
+  "Geography: Hamilton, Kitchener-Cambridge-Waterloo, London, Ottawa-Gatineau, St. Catharines-Niagara, Toronto",
+  "Annual aggregation: sum of monthly starts within each calendar year."
 )
 writeLines(housing_note, file.path(notes_root, "housing_starts_note.txt"))
 
 cat("Cleaned source files written to data/clean.\n")
+

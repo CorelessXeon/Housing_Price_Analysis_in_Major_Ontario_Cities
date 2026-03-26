@@ -31,82 +31,52 @@ target_cities <- c(
   "London",
   "St. Catharines-Niagara"
 )
-panel_dates <- seq(as.Date("2016-01-01"), as.Date("2024-12-01"), by = "month")
-
+# Panel is annual: 2016-2023 (upper bound set by international students data)
 panel <- expand.grid(
-  date = panel_dates,
+  year = 2016:2023,
   city = target_cities,
   KEEP.OUT.ATTRS = FALSE,
   stringsAsFactors = FALSE
 )
 
-housing_prices <- read.csv(file.path(clean_root, "housing_prices_monthly.csv"), stringsAsFactors = FALSE)
-student_inflows <- read.csv(file.path(clean_root, "student_inflows_monthly.csv"), stringsAsFactors = FALSE)
-policy_rate <- read.csv(file.path(clean_root, "policy_rate_monthly.csv"), stringsAsFactors = FALSE)
-housing_starts <- read.csv(file.path(clean_root, "housing_starts_monthly.csv"), stringsAsFactors = FALSE)
+housing_prices <- read.csv(file.path(clean_root, "housing_prices_annual.csv"),  stringsAsFactors = FALSE)
+intl_students  <- read.csv(file.path(clean_root, "intl_students_annual.csv"),   stringsAsFactors = FALSE)
+policy_rate    <- read.csv(file.path(clean_root, "policy_rate_annual.csv"),     stringsAsFactors = FALSE)
+housing_starts <- read.csv(file.path(clean_root, "housing_starts_annual.csv"),  stringsAsFactors = FALSE)
 
-housing_prices$date <- as.Date(housing_prices$date)
-student_inflows$date <- as.Date(student_inflows$date)
-policy_rate$date <- as.Date(policy_rate$date)
-housing_starts$date <- as.Date(housing_starts$date)
+names(intl_students)[names(intl_students) == "cma"] <- "city"
 
-panel <- merge(
-  panel,
-  housing_prices[, c("date", "city", "price_index")],
-  by = c("date", "city"),
-  all.x = TRUE,
-  sort = TRUE
-)
-panel <- merge(
-  panel,
-  student_inflows[, c("date", "city", "study_permit_inflow_proxy")],
-  by = c("date", "city"),
-  all.x = TRUE,
-  sort = TRUE
-)
-panel <- merge(
-  panel,
-  housing_starts[, c("date", "city", "housing_starts")],
-  by = c("date", "city"),
-  all.x = TRUE,
-  sort = TRUE
-)
-panel <- merge(
-  panel,
-  policy_rate[, c("date", "policy_rate")],
-  by = "date",
-  all.x = TRUE,
-  sort = TRUE
-)
+panel <- merge(panel, housing_prices[, c("year", "city", "price_index")],    by = c("year", "city"), all.x = TRUE, sort = TRUE)
+panel <- merge(panel, intl_students[,  c("year", "city", "intl_students")],  by = c("year", "city"), all.x = TRUE, sort = TRUE)
+panel <- merge(panel, housing_starts[, c("year", "city", "housing_starts")], by = c("year", "city"), all.x = TRUE, sort = TRUE)
+panel <- merge(panel, policy_rate[,    c("year", "policy_rate")],            by = "year",            all.x = TRUE, sort = TRUE)
 
-panel$year <- as.integer(format(panel$date, "%Y"))
-panel$month <- as.integer(format(panel$date, "%m"))
 panel$log_price_index <- ifelse(
   is.na(panel$price_index) | panel$price_index <= 0,
   NA_real_,
   log(panel$price_index)
 )
-panel$policy_rate_z <- z_score(panel$policy_rate)
-panel$study_permit_inflow_proxy_z <- z_score(panel$study_permit_inflow_proxy)
+panel$policy_rate_z    <- z_score(panel$policy_rate)
+panel$intl_students_z  <- z_score(panel$intl_students)
 panel$housing_starts_z <- z_score(panel$housing_starts)
-panel <- panel[order(panel$city, panel$date), ]
+panel <- panel[order(panel$city, panel$year), ]
 
-write.csv(panel, file.path(clean_root, "panel_city_month.csv"), row.names = FALSE)
+write.csv(panel, file.path(clean_root, "panel_city_year.csv"), row.names = FALSE)
 
 missingness <- data.frame(
-  variable = c("price_index", "log_price_index", "policy_rate", "study_permit_inflow_proxy", "housing_starts"),
+  variable = c("price_index", "log_price_index", "policy_rate", "intl_students", "housing_starts"),
   missing_count = c(
     sum(is.na(panel$price_index)),
     sum(is.na(panel$log_price_index)),
     sum(is.na(panel$policy_rate)),
-    sum(is.na(panel$study_permit_inflow_proxy)),
+    sum(is.na(panel$intl_students)),
     sum(is.na(panel$housing_starts))
   ),
   observed_count = c(
     sum(!is.na(panel$price_index)),
     sum(!is.na(panel$log_price_index)),
     sum(!is.na(panel$policy_rate)),
-    sum(!is.na(panel$study_permit_inflow_proxy)),
+    sum(!is.na(panel$intl_students)),
     sum(!is.na(panel$housing_starts))
   )
 )
@@ -115,14 +85,16 @@ write.csv(missingness, file.path(output_root, "tables", "panel_missingness.csv")
 panel_note <- c(
   "Panel construction note",
   "=======================",
-  "Unit of analysis: city-month.",
-  "Date window: 2016-01 through 2024-12.",
-  "Outcome: NHPI total (house and land), transformed to log(price_index).",
-  "Policy rate: monthly mean of local daily series from lookup.csv.",
-  "Student inflow: local prebuilt city proxy, plus St. Catharines-Niagara supplement from study permits.csv.",
-  "Housing starts: city-specific total units from 3410015601-eng.csv.",
-  "Consequence: housing supply is now available at the city-month level for all six target geographies."
+  "Unit of analysis: city-year.",
+  "Year window: 2016 through 2023 (upper bound set by international students data).",
+  "Outcome: NHPI total (house and land) averaged annually, transformed to log(price_index).",
+  "Policy rate: annual mean of daily series from Interest_rate.csv.",
+  "International students: annual count of international students enrolled at postsecondary institutions in each CMA. Source: StatCan table 37-10-0232-01 (International_students.csv).",
+  "Housing starts: annual sum of monthly starts per city from New_houses_built.csv."
 )
 writeLines(panel_note, file.path(output_root, "notes", "panel_note.txt"))
 
-cat("Panel dataset written to data/clean/panel_city_month.csv.\n")
+cat("Panel dataset written to data/clean/panel_city_year.csv.\n")
+
+
+

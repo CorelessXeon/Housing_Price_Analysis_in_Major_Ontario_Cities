@@ -4,10 +4,10 @@ This project builds a city-by-month panel for six Ontario CMAs from `2016-01` to
 
 ## Local data choices
 
-- Housing prices: `data/data_raw/1810020501-eng.csv` (Statistics Canada NHPI).
-- Policy rate: `data/data_raw/lookup.csv`, which contains the daily overnight-rate target series and is aggregated to monthly means.
-- Student inflow proxy: `data/data_raw/student_permits_city_proxy_2015_2025_monthly.csv`, with a local supplement for `St. Catharines-Niagara` from `data/data_raw/study permits.csv`.
-- Housing starts: `data/data_raw/3410015601-eng.csv`, which now contains the six target city geographies directly and is merged at the city-month level.
+- Housing prices: `data/data_raw/Housing_price_index.csv` (Statistics Canada NHPI).
+- Policy rate: `data/data_raw/Interest_rate.csv`, which contains the daily overnight-rate target series and is aggregated to monthly means.
+- International student enrolment: `data/data_raw/International_students.csv` (StatCan table 37-10-0232-01 — "Postsecondary enrolments by institution"). Annual count of international students enrolled per CMA, covering 2015/2016–2023/2024. Suppressed values (`..`) are imputed: leading years before an institution existed are set to 0; interior gaps are filled with the institution's mean across available years.
+- Housing starts: `data/data_raw/New_houses_built.csv`, which now contains the six target city geographies directly and is merged at the city-month level.
 
 ## Project structure
 
@@ -41,6 +41,6 @@ source("05_diagnostics_and_outputs.R")
 ## Notes
 
 - The outcome is `log(price_index)`.
-- The policy-rate series is daily in `lookup.csv`, so it is converted to monthly means to align with the monthly housing-price series.
+- The policy-rate series is daily in `Interest_rate.csv`, so it is converted to monthly means to align with the monthly housing-price series.
 - The housing-starts file now contains city-specific series for the six target geographies, so housing supply is merged directly at the city-month level.
 - `brms`, `rstan`, `posterior`, and `bayesplot` are installed locally and the pipeline now uses them directly.

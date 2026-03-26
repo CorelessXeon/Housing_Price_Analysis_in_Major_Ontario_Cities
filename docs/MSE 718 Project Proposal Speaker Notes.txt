@@ -13,7 +13,7 @@ The main outcome variable is the monthly housing price index by city, obtained f
 
 There are three main predictors:
 The Bank of Canada policy interest rate, aggregated to monthly averages to represent national monetary policy conditions.
-The number of international study permits, from IRCC open data, which serves as a proxy for international student inflows and housing demand.
+The number of international students enrolled at postsecondary institutions per CMA, from Statistics Canada table 37-10-0232-01, which measures the stock of international students and their housing demand.
 Housing starts data from CMHC and Statistics Canada, used as a proxy for local housing supply.
 
 
@@ -22,11 +22,11 @@ Bayesian Model and Expected Outputs
 To analyze this question, we will use a Bayesian multilevel regression model. Our data comes from multiple cities observed over time. These cities share some common factors, like the national interest rate, but they may still respond differently depending on their own housing markets. A multilevel model allows us to handle this situation.
 It estimates overall effects that are shared across all cities, while also allowing each city to have its own variation around those effects. This approach is called partial pooling, and it helps us avoid treating all cities as identical while still using information from the full dataset.
 
-In our model, the dependent variable will be the log of the housing price index. The predictors include the policy interest rate, international student inflows, and housing starts, which represent housing supply.
+In our model, the dependent variable will be the log of the housing price index. The predictors include the policy interest rate, international student enrolment, and housing starts, which represent housing supply.
 
 We will estimate the model using Bayesian methods with weakly informative priors, and we will check model performance using convergence diagnostics and posterior predictive checks.
 
 We expect to produce several main results from this model:
-First, we will estimate the posterior effects of interest rates, student inflows, and housing supply on housing prices.
+First, we will estimate the posterior effects of interest rates, international student enrolment, and housing supply on housing prices.
 Second, we will examine city-level differences, showing how strongly different housing markets respond to these factors.
 Finally, we will use posterior predictions to evaluate how well the model explains the observed housing price trends.
