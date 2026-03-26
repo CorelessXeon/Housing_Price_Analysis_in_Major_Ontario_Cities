@@ -2,15 +2,10 @@ File inspection summary
 ======================
 
 Raw files found:
-- data/data_raw/1810020501-eng.csv
-- data/data_raw/3410015601-eng.csv
-- data/data_raw/download_links.md
-- data/data_raw/IRCC_M_TRStudy_0005_E.xls
-- data/data_raw/lookup.csv
-- data/data_raw/ODP-TR-Study-DLI_name_PT_Admin_type.csv
-- data/data_raw/ODP-TR-Study-DLI_name_PT_Inst_type.csv
-- data/data_raw/student_permits_city_proxy_2015_2025_monthly.csv
-- data/data_raw/study permits.csv
+- data/data_raw/Housing_price_index.csv
+- data/data_raw/Interest_rate.csv
+- data/data_raw/International_students.csv
+- data/data_raw/New_houses_built.csv
 - docs/MSE 718 Project Proposal Outline.txt
 - docs/MSE 718 Project Proposal Speaker Notes.txt
 - docs/MSE 718 Term Project Proposal - Group 6.pptx
@@ -18,33 +13,34 @@ Raw files found:
 - docs/PROJECT_PROPOSAL_MINI.docx
 
 Most usable outcome source:
-- 1810020501-eng.csv is the best housing-price source because its geography blocks include all six target CMAs: Ottawa-Gatineau, Ontario part, Ontario/Quebec 7; Toronto, Ontario 9; Hamilton, Ontario; St. Catharines-Niagara, Ontario; Kitchener-Cambridge-Waterloo, Ontario; London, Ontario.
+- Housing_price_index.csv is the best housing-price source because its geography blocks include all six target CMAs: Ottawa-Gatineau, Ontario part, Ontario/Quebec 7; Toronto, Ontario 9; Hamilton, Ontario; St. Catharines-Niagara, Ontario; Kitchener-Cambridge-Waterloo, Ontario; London, Ontario.
 - Usable NHPI measure rows in the first geography block: Total (house and land), House only, Land only.
 - The planned outcome row is `Total (house and land)` and the outcome transform will be log(price_index).
 Policy-rate source:
-- lookup.csv contains 2338 daily observations with date range 2016-01-01 to 2024-12-31.
-- The cleaning script will aggregate lookup.csv from daily to monthly means.
+- Interest_rate.csv contains 2338 daily observations with date range 2016-01-01 to 2024-12-31.
+- The cleaning script will aggregate Interest_rate.csv from daily to monthly means.
 
 Alternative housing-price file:
 - House_Price_Index.csv is not present in the current project folder, so it is ignored.
 
 
 Housing-starts source:
-- 3410015601-eng.csv runs from January 2016 to December 2024.
+- New_houses_built.csv runs from January 2016 to December 2024.
 - Series rows available in the local export: Total units, Single-detached units, Multiples, Semi-detached units, Row units, Apartment and other unit types.
 - Geography labels present in the local export: Geography, Hamilton, Ontario, Kitchener-Cambridge-Waterloo, Ontario, London, Ontario, Ottawa-Gatineau, Ontario part, Ontario, St. Catharines-Niagara, Ontario, Toronto, Ontario.
 - The current local file contains the six target geographies directly, so housing starts can now be merged at the city-month level.
 
-Study-permit / student inflow sources:
-- study permits.csv has usable columns: EN_YEAR, EN_QUARTER, EN_MONTH, TOTAL, EN_DLI_PROVINCE_TERRITORY, EN_ADMIN_TYPE, EN_DESIGNATED_LEARNING_INSTITUTION.
-- student_permits_city_proxy_2015_2025_monthly.csv has usable columns: date, city, study_permit_inflow_proxy.
-- Proxy coverage for target cities: Toronto=TRUE; Ottawa-Gatineau=TRUE; Hamilton=TRUE; Kitchener-Cambridge-Waterloo=TRUE; London=TRUE; St. Catharines-Niagara=FALSE.
-- Because the proxy file is missing St. Catharines-Niagara, the cleaning script will supplement that city from study permits.csv using clearly local institutions.
+International student enrolment source:
+- International_students.csv: 248 institutions x 9 academic years.
+- Source: StatCan table 37-10-0232-01 — annual postsecondary enrolment of international students by institution.
+- Each column is an academic year (e.g. '2023 / 2024'); lower year used as the integer year value.
+- '..' (suppressed values) are imputed: leading '..' (before institution existed) set to 0; interior '..' set to institution mean across available years.
+- Institution-to-CMA mapping applied in 02_clean_each_source.R; institutions outside the 6 target CMAs are dropped.
 
 Expected harmonization steps:
 - Standardize city labels to the six target CMAs.
 - Restrict all sources to 2016-01 through 2024-12.
-- Convert lookup.csv from daily to monthly frequency.
+- Convert Interest_rate.csv from daily to monthly frequency.
 - Strip NHPI quality flag suffixes such as trailing `E` before numeric conversion.
-- Merge city-specific housing-starts blocks from 3410015601-eng.csv into the panel.
+- Merge city-specific housing-starts blocks from New_houses_built.csv into the panel.
 - Merge to a city-by-month panel.

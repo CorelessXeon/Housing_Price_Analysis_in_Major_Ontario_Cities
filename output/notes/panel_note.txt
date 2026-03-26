@@ -1,9 +1,8 @@
 Panel construction note
 =======================
-Unit of analysis: city-month.
-Date window: 2016-01 through 2024-12.
-Outcome: NHPI total (house and land), transformed to log(price_index).
-Policy rate: monthly mean of local daily series from lookup.csv.
-Student inflow: local prebuilt city proxy, plus St. Catharines-Niagara supplement from study permits.csv.
-Housing starts: city-specific total units from 3410015601-eng.csv.
-Consequence: housing supply is now available at the city-month level for all six target geographies.
+Unit of analysis: city-year.
+Year window: 2016 through 2023 (upper bound set by international students data).
+Outcome: NHPI total (house and land) averaged annually, transformed to log(price_index).
+Policy rate: annual mean of daily series from Interest_rate.csv.
+International students: annual count of international students enrolled at postsecondary institutions in each CMA. Source: StatCan table 37-10-0232-01 (International_students.csv).
+Housing starts: annual sum of monthly starts per city from New_houses_built.csv.

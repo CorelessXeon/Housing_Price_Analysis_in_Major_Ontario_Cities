@@ -1,6 +1,6 @@
 Policy-rate note
 ================
-Source: data/data_raw/lookup.csv
+Source: data/data_raw/Interest_rate.csv
 Daily observations extracted: 2338
 Daily date range: 2016-01-01 to 2024-12-31
-Monthly aggregation: arithmetic mean within each month.
+Annual aggregation: arithmetic mean of all daily values within each calendar year.
