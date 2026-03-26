@@ -1,0 +1,6 @@
+Student inflow note
+===================
+Main source: student_permits_city_proxy_2015_2025_monthly.csv
+Supplement: study permits.csv for St. Catharines-Niagara only.
+Supplement institutions: Brock University, Niagara College Canada, University of Niagara Falls Canada
+TODO: some Niagara-named institutions are geographically ambiguous and were not added automatically.

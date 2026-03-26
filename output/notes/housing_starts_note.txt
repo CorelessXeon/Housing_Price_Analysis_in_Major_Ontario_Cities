@@ -1,0 +1,6 @@
+Housing starts note
+===================
+Source: data/data_raw/3410015601-eng.csv
+Series used: Total units
+Geography available in the local export: Hamilton, Kitchener-Cambridge-Waterloo, London, Ottawa-Gatineau, St. Catharines-Niagara, Toronto
+The CMHC file now contains city-specific housing starts for the six target geographies, so housing_starts is merged directly at the city-month level.

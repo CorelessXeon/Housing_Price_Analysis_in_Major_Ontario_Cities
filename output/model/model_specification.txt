@@ -1,0 +1,18 @@
+Model specification
+===================
+Package: brms
+Backend: rstan
+Formula: log_price_index ~ policy_rate_z + study_permit_inflow_proxy_z + housing_starts_z + (1 + housing_starts_z | city)
+Observations used: 648
+Cities used: 6
+Priors:
+- Intercept ~ normal(4.766, 1)
+- b ~ normal(0, 0.5)
+- sd ~ exponential(1)
+- sigma ~ exponential(1)
+- cor ~ lkj(2)
+
+Notes:
+- Housing starts came from 3410015601-eng.csv.
+- The current local CMHC export contains city-specific housing-starts blocks for the six target geographies.
+- Because brms and rstan are installed locally, this script now uses brms instead of the earlier custom Gibbs sampler.
