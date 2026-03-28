@@ -19,6 +19,78 @@ fit1 <- readRDS(file.path(model_root, "fit1_base.rds"))
 fit2 <- readRDS(file.path(model_root, "fit2_supply.rds"))
 
 # =============================================================================
+# 0. CONVERGENCE DIAGNOSTICS
+# R-hat < 1.01 and Bulk ESS > 400 are standard thresholds for reliable
+# posterior inference. We check both models and warn if any parameter fails.
+# Full parameter-level diagnostics are saved to a CSV for the report.
+# =============================================================================
+
+check_convergence <- function(fit, label) {
+  s      <- summary(fit)
+  params <- rbind(
+    s$fixed[,      c("Rhat", "Bulk_ESS", "Tail_ESS"), drop = FALSE],
+    s$random$cma[, c("Rhat", "Bulk_ESS", "Tail_ESS"), drop = FALSE],
+    s$spec_pars[,  c("Rhat", "Bulk_ESS", "Tail_ESS"), drop = FALSE]
+  )
+  max_rhat     <- max(params$Rhat,     na.rm = TRUE)
+  min_bulk_ess <- min(params$Bulk_ESS, na.rm = TRUE)
+  min_tail_ess <- min(params$Tail_ESS, na.rm = TRUE)
+  if (max_rhat > 1.01)
+    warning(sprintf("%s: max R-hat = %.4f > 1.01 — convergence not confirmed.", label, max_rhat))
+  if (min_bulk_ess < 400)
+    warning(sprintf("%s: min Bulk ESS = %.0f < 400.", label, min_bulk_ess))
+  list(
+    label        = label,
+    params       = data.frame(parameter = rownames(params), params, row.names = NULL),
+    max_rhat     = max_rhat,
+    min_bulk_ess = min_bulk_ess,
+    min_tail_ess = min_tail_ess,
+    passed       = max_rhat <= 1.01 && min_bulk_ess >= 400
+  )
+}
+
+conv1 <- check_convergence(fit1, "Model 1 (Base)")
+conv2 <- check_convergence(fit2, "Model 2 (Supply-Adjusted)")
+
+conv_df <- rbind(
+  cbind(model = "Model 1", conv1$params),
+  cbind(model = "Model 2", conv2$params)
+)
+write.csv(conv_df, file.path(loo_root, "convergence_diagnostics.csv"), row.names = FALSE)
+
+cat(sprintf("Model 1 convergence: max R-hat = %.4f, min Bulk ESS = %.0f  [%s]\n",
+            conv1$max_rhat, conv1$min_bulk_ess, if (conv1$passed) "PASS" else "FAIL"))
+cat(sprintf("Model 2 convergence: max R-hat = %.4f, min Bulk ESS = %.0f  [%s]\n",
+            conv2$max_rhat, conv2$min_bulk_ess, if (conv2$passed) "PASS" else "FAIL"))
+
+# =============================================================================
+# POSTERIOR FIXED EFFECTS SUMMARY
+# Save mean and 95% CI for all fixed effects in both models to a CSV so
+# the numbers can be reported directly without re-running the model.
+# =============================================================================
+
+extract_fixef <- function(fit, model_label) {
+  fe <- as.data.frame(brms::fixef(fit))
+  data.frame(
+    model     = model_label,
+    parameter = rownames(fe),
+    mean      = round(fe$Estimate, 4),
+    ci_lo     = round(fe$Q2.5,     4),
+    ci_hi     = round(fe$Q97.5,    4),
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
+}
+
+fixef_df <- rbind(
+  extract_fixef(fit1, "Model 1 (Base)"),
+  extract_fixef(fit2, "Model 2 (Supply-Adjusted)")
+)
+write.csv(fixef_df, file.path(loo_root, "posterior_fixef_summary.csv"), row.names = FALSE)
+cat("Fixed effects posterior summary saved to output/loo/posterior_fixef_summary.csv\n")
+print(fixef_df)
+
+# =============================================================================
 # 1. COMPUTE LOO FOR BOTH MODELS
 # LOO-CV approximates how well each model predicts a held-out observation.
 # The PSIS-LOO approximation is fast; high Pareto-k values (> 0.7) flag
@@ -262,7 +334,8 @@ mdata <- fit1$data
 # Pre-calculate global scaling to match fit1's internal scale(intl_students)
 mdata$intl_students_s <- as.numeric(scale(mdata$intl_students))
 
-# 6a. No pooling models (using a weak prior to represent un-shrunk city data)
+# 6a. No pooling models — load from cache if available, fit and save if not.
+# To force a refit, run 06b_save_pooling_models.R first.
 no_pool_priors <- c(
   brms::set_prior("normal(4.8, 0.5)", class = "Intercept"),
   brms::set_prior("normal(0, 1)",      class = "b", coef = "intl_students_s"),
@@ -271,20 +344,28 @@ no_pool_priors <- c(
 )
 
 no_pool <- do.call(rbind, lapply(levels(mdata$cma), function(ct) {
-  cat(sprintf("  Fitting no-pooling model for %s...\n", ct))
-  sub    <- mdata[mdata$cma == ct, ]
-  fit_np <- brms::brm(
-    formula  = brms::bf(log_hpi ~ intl_students_s + policy_rate),
-    data     = sub,
-    family   = gaussian(),
-    prior    = no_pool_priors,
-    backend  = "rstan",
-    chains   = 4,
-    iter     = 2000,
-    warmup   = 1000,
-    seed     = 20260323,
-    refresh  = 0
-  )
+  np_path <- file.path(model_root,
+                       sprintf("no_pool_%s.rds", gsub("[^A-Za-z0-9]", "_", ct)))
+  if (file.exists(np_path)) {
+    cat(sprintf("  Loading no-pooling model for %s from cache...\n", ct))
+    fit_np <- readRDS(np_path)
+  } else {
+    cat(sprintf("  Fitting no-pooling model for %s...\n", ct))
+    sub    <- mdata[mdata$cma == ct, ]
+    fit_np <- brms::brm(
+      formula  = brms::bf(log_hpi ~ intl_students_s + policy_rate),
+      data     = sub,
+      family   = gaussian(),
+      prior    = no_pool_priors,
+      backend  = "rstan",
+      chains   = 4,
+      iter     = 2000,
+      warmup   = 1000,
+      seed     = 20260323,
+      refresh  = 0
+    )
+    saveRDS(fit_np, np_path)
+  }
   est <- brms::fixef(fit_np)["intl_students_s", ]
   data.frame(
     cma      = ct,
@@ -297,26 +378,33 @@ no_pool <- do.call(rbind, lapply(levels(mdata$cma), function(ct) {
 }))
 cat("No-pooling models done.\n")
 
-# 6b. Complete pooling model (one model for all data, no groups)
-cat("  Fitting complete pooling model...\n")
+# 6b. Complete pooling model — load from cache if available, fit and save if not.
+cp_path <- file.path(model_root, "complete_pool.rds")
 cp_priors <- c(
   brms::set_prior("normal(4.8, 0.5)",         class = "Intercept"),
   brms::set_prior("skew_normal(0.1, 0.1, 3)", class = "b", coef = "intl_students_s"),
   brms::set_prior("normal(0, 0.5)",           class = "b"),
   brms::set_prior("exponential(1)",           class = "sigma")
 )
-fit_cp <- brms::brm(
-  formula  = brms::bf(log_hpi ~ intl_students_s + policy_rate),
-  data     = mdata,
-  family   = gaussian(),
-  prior    = cp_priors,
-  backend  = "rstan",
-  chains   = 4,
-  iter     = 2000,
-  warmup   = 1000,
-  seed     = 20260323,
-  refresh  = 0
-)
+if (file.exists(cp_path)) {
+  cat("  Loading complete pooling model from cache...\n")
+  fit_cp <- readRDS(cp_path)
+} else {
+  cat("  Fitting complete pooling model...\n")
+  fit_cp <- brms::brm(
+    formula  = brms::bf(log_hpi ~ intl_students_s + policy_rate),
+    data     = mdata,
+    family   = gaussian(),
+    prior    = cp_priors,
+    backend  = "rstan",
+    chains   = 4,
+    iter     = 2000,
+    warmup   = 1000,
+    seed     = 20260323,
+    refresh  = 0
+  )
+  saveRDS(fit_cp, cp_path)
+}
 cp_est <- brms::fixef(fit_cp)["intl_students_s", ]
 
 complete_pool <- data.frame(
@@ -420,6 +508,16 @@ report <- c(
   "  log_hpi ~ scale(intl_students) + policy_rate + scale(house_supply)",
   "  + (1 + scale(intl_students) + scale(house_supply) | cma)",
   "",
+  "--- Convergence Diagnostics ---",
+  "  Thresholds: R-hat < 1.01, Bulk ESS > 400.",
+  sprintf("  Model 1: max R-hat = %.4f, min Bulk ESS = %.0f, min Tail ESS = %.0f  [%s]",
+          conv1$max_rhat, conv1$min_bulk_ess, conv1$min_tail_ess,
+          if (conv1$passed) "PASS" else "FAIL"),
+  sprintf("  Model 2: max R-hat = %.4f, min Bulk ESS = %.0f, min Tail ESS = %.0f  [%s]",
+          conv2$max_rhat, conv2$min_bulk_ess, conv2$min_tail_ess,
+          if (conv2$passed) "PASS" else "FAIL"),
+  "  Full parameter-level diagnostics: output/loo/convergence_diagnostics.csv",
+  "",
   "--- LOO Summary: Model 1 ---",
   capture.output(print(loo1)),
   "",
@@ -488,7 +586,9 @@ report <- c(
   "  student effect in that specific market.",
   "",
   "Output files:",
-  "  output/loo/loo1_pointwise_by_cma.png  — pointwise ELPD boxplot by CMA",
+  "  output/loo/convergence_diagnostics.csv   — R-hat and ESS for all parameters",
+  "  output/loo/posterior_fixef_summary.csv   — fixed effects mean and 95% CI, both models",
+  "  output/loo/loo1_pointwise_by_cma.png     — pointwise ELPD boxplot by CMA",
   "  output/loo/city_slopes.png             — city-specific partial pooling slopes",
   "  output/loo/city_slopes.csv             — city slopes table",
   "  output/loo/pooling_comparison.png      — no / complete / partial pooling comparison",

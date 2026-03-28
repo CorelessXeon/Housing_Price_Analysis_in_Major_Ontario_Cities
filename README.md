@@ -59,7 +59,7 @@ data/
 output/
   eda/            EDA report and city x year tables
   model/          fitted model RDS files and specification note
-  loo/            LOO results, pointwise ELPD boxplot, comparison report
+  loo/            LOO results, convergence diagnostics, pointwise ELPD boxplot, comparison report
   ppc/            posterior predictive check plots and interpretation guide
   notes/          source and harmonization notes
   tables/         panel missingness table
@@ -75,6 +75,7 @@ output/
 | `04_exploratory_data_analysis.R` | EDA report: distributions, trends, correlations, missingness |
 | `05_fit_models.R` | Fit Model 1 and Model 2 in brms |
 | `06_loo_comparison.R` | LOO-CV, pointwise diagnostics by CMA, model comparison |
+| `06b_save_pooling_models.R` | Fits and saves no-pooling and complete-pooling models for the pooling comparison (run once; `06_loo_comparison.R` loads from cache afterwards) |
 | `07_posterior_predictive_checks.R` | PPC interval plots grouped by CMA |
 
 ## Run order
@@ -85,6 +86,7 @@ source("02_clean_each_source.R")
 source("03_build_panel.R")
 source("04_exploratory_data_analysis.R")
 source("05_fit_models.R")
+source("06b_save_pooling_models.R")   # run once to cache pooling comparison models
 source("06_loo_comparison.R")
 source("07_posterior_predictive_checks.R")
 ```
