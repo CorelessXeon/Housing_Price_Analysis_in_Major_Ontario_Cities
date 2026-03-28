@@ -310,7 +310,7 @@ report <- c(
   "    log_hpi ~ intl_students_s + policy_rate + (1 + intl_students_s | cma)",
   "  Model 2 (Supply-Adjusted):",
   "    log_hpi ~ intl_students_s + policy_rate + house_supply_s",
-  "    + (1 + intl_students_s | cma)",
+  "    + (1 + intl_students_s + house_supply_s | cma)",
   "",
   "Simulation:",
   "  500 replicated datasets drawn from p(y_rep | y, X) via posterior_predict().",

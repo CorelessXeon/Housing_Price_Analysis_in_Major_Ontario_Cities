@@ -61,7 +61,9 @@ cat(sprintf("Rows used for modelling: %d across %d CMAs\n",
 #   mean for both intercept and student slope (partial pooling).
 #
 # cor ~ lkj(2)
-#   Mildly regularises the correlation between the random intercept and slope.
+#   Mildly regularises the correlation matrix of the random effects.
+#   Model 1: 2x2 matrix (intercept, intl_students slope).
+#   Model 2: 3x3 matrix (intercept, intl_students slope, house_supply slope).
 # =============================================================================
 
 priors_base <- c(
@@ -123,7 +125,7 @@ cat("Model 1 saved to output/model/fit1_base.rds\n")
 fit2 <- brms::brm(
   formula    = brms::bf(
     log_hpi ~ intl_students_s + policy_rate + house_supply_s +
-      (1 + intl_students_s | cma)
+      (1 + intl_students_s + house_supply_s | cma)
   ),
   data       = model_data,
   family     = gaussian(),
@@ -163,7 +165,7 @@ spec_lines <- c(
   "",
   "Model 2 (Supply-Adjusted):",
   "  Formula : log_hpi ~ intl_students_s + policy_rate + house_supply_s",
-  "            + (1 + intl_students_s | cma)",
+  "            + (1 + intl_students_s + house_supply_s | cma)",
   sprintf("  Observations: %d  |  CMAs: %d", nrow(model_data), nlevels(model_data$cma)),
   sprintf("  intl_students_s posterior: Estimate=%.4f, 95%% CI [%.4f, %.4f]",
           coef2["Estimate"], coef2["Q2.5"], coef2["Q97.5"]),
@@ -175,7 +177,7 @@ spec_lines <- c(
   "  scale(house_supply)    : normal(0, 0.5)  [default b prior]",
   "  sd (group-level)       : exponential(1)",
   "  sigma (residual SD)    : exponential(1)",
-  "  cor (intercept-slope)  : lkj(2)",
+  "  cor (random effects)   : lkj(2)  [2x2 in Model 1; 3x3 in Model 2]",
   "",
   "Variable mapping from panel_city_year.csv:",
   "  log_hpi       <- log_price_index",

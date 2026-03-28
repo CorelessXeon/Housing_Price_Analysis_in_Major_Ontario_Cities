@@ -418,7 +418,7 @@ report <- c(
   "  log_hpi ~ scale(intl_students) + policy_rate + (1 + scale(intl_students) | cma)",
   "Model 2 (Supply-Adjusted):",
   "  log_hpi ~ scale(intl_students) + policy_rate + scale(house_supply)",
-  "  + (1 + scale(intl_students) | cma)",
+  "  + (1 + scale(intl_students) + scale(house_supply) | cma)",
   "",
   "--- LOO Summary: Model 1 ---",
   capture.output(print(loo1)),
