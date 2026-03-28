@@ -35,9 +35,9 @@ Estimates the baseline effect of international student enrolment on log(HPI) wit
 
 **Model 2 (Supply-Adjusted)**
 ```
-log_hpi ~ scale(intl_students) + policy_rate + scale(house_supply) + (1 + scale(intl_students) | cma)
+log_hpi ~ scale(intl_students) + policy_rate + scale(house_supply) + (1 + scale(intl_students) + scale(house_supply) | cma)
 ```
-Adds housing starts as a supply-side control. Comparing the `scale(intl_students)` coefficient between Model 1 and Model 2 is the key test for omitted variable bias.
+Adds housing starts as a supply-side control with both a fixed effect and a city-varying slope, allowing the supply-price relationship to differ across CMAs. Comparing the `scale(intl_students)` coefficient between Model 1 and Model 2 is the key test for omitted variable bias.
 
 **Priors**
 
@@ -48,7 +48,7 @@ Adds housing starts as a supply-side control. Comparing the `scale(intl_students
 | `policy_rate`, `scale(house_supply)` | `normal(0, 0.5)` | Weakly informative, no directional assumption |
 | Group-level SD | `exponential(1)` | Controls shrinkage across 6 CMAs |
 | Residual SD | `exponential(1)` | |
-| Intercept-slope correlation | `lkj(2)` | Mild regularisation |
+| Random effects correlation matrix | `lkj(2)` | Mild regularisation; 2×2 in Model 1 (intercept, student slope), 3×3 in Model 2 (intercept, student slope, supply slope) |
 
 ## Project structure
 
@@ -92,7 +92,7 @@ source("07_posterior_predictive_checks.R")
 ## Known limitations
 
 - **Small panel (n = 48):** Only 8 time points per city limits the precision of city-level slope estimates.
-- **LOO Pareto-k diagnostics:** After moment matching, 2–3 observations retain Pareto-k > 0.7, indicating those specific city-years are highly influential. With only 48 observations this is expected. The LOO comparison conclusion is not materially affected, but exact leave-one-out refitting (`reloo = TRUE`) was omitted due to the computational cost.
+- **LOO Pareto-k diagnostics:** After moment matching, 2 observations in Model 1 and 4 in Model 2 retain Pareto-k > 0.7, indicating those specific city-years are highly influential. With only 48 observations this is expected. The LOO comparison conclusion is not materially affected, but exact leave-one-out refitting (`reloo = TRUE`) was omitted due to the computational cost.
 - **Annual aggregation:** International student data is only available annually, so the entire panel operates at annual frequency. Monthly variation in housing prices and the policy rate is averaged out.
 - **CMA mapping:** International student counts are aggregated from institution-level data using a manual CMA lookup. Institutions not in the lookup are dropped.
 
