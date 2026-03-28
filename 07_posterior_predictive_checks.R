@@ -217,6 +217,49 @@ ggplot2::ggsave(
 )
 cat("Density overlay plot saved to output/ppc/ppc_model1_density_by_cma.png\n")
 
+# Model 2 density overlay
+draw_idx2 <- sample(nrow(yrep2), n_dens_draws)
+
+sim_long2 <- do.call(rbind, lapply(seq_along(draw_idx2), function(i) {
+  data.frame(
+    log_hpi = yrep2[draw_idx2[i], ],
+    cma     = cma_vec,
+    draw_id = i,
+    stringsAsFactors = FALSE
+  )
+}))
+
+p_dens2 <- ggplot2::ggplot() +
+  ggplot2::geom_density(
+    data = sim_long2,
+    ggplot2::aes(x = log_hpi, group = draw_id),
+    colour = "#A8C4DE", linewidth = 0.3, alpha = 0.6
+  ) +
+  ggplot2::geom_density(
+    data = obs_long,
+    ggplot2::aes(x = log_hpi),
+    colour = "#C0392B", linewidth = 0.9
+  ) +
+  ggplot2::facet_wrap(~ cma, scales = "free_y") +
+  ggplot2::labs(
+    title    = "Model 2 (Supply-Adjusted): Observed vs Simulated log(HPI) Density by CMA",
+    subtitle = "Red = observed distribution.  Blue lines = 50 posterior predictive draws.",
+    x        = "log(HPI)",
+    y        = "Density"
+  ) +
+  ggplot2::theme_bw(base_size = 11) +
+  ggplot2::theme(
+    strip.background = ggplot2::element_rect(fill = "#EAF2EA"),
+    strip.text       = ggplot2::element_text(face = "bold", size = 9),
+    plot.subtitle    = ggplot2::element_text(size = 9, colour = "grey40")
+  )
+
+ggplot2::ggsave(
+  file.path(ppc_root, "ppc_model2_density_by_cma.png"),
+  p_dens2, width = 11, height = 7, dpi = 150
+)
+cat("Density overlay plot saved to output/ppc/ppc_model2_density_by_cma.png\n")
+
 # =============================================================================
 # 4. COVERAGE STATISTICS
 # Numerically validate what the plots show visually. For each CMA and each
@@ -311,6 +354,7 @@ report <- c(
   "  Model 2 (Supply-Adjusted):",
   "    log_hpi ~ intl_students_s + policy_rate + house_supply_s",
   "    + (1 + intl_students_s + house_supply_s | cma)",
+  "    Density overlay: output/ppc/ppc_model2_density_by_cma.png",
   "",
   "Simulation:",
   "  500 replicated datasets drawn from p(y_rep | y, X) via posterior_predict().",
@@ -355,6 +399,7 @@ report <- c(
   "  output/ppc/ppc_model1_intervals.png       — grouped interval plot, Model 1",
   "  output/ppc/ppc_model2_intervals.png       — grouped interval plot, Model 2",
   "  output/ppc/ppc_model1_density_by_cma.png  — density overlay by CMA, Model 1",
+  "  output/ppc/ppc_model2_density_by_cma.png  — density overlay by CMA, Model 2",
   "  output/ppc/ppc_coverage_stats.csv         — empirical coverage table",
   "  output/ppc/ppc_report.txt                 — this report"
 )
