@@ -1,0 +1,247 @@
+Exploratory Data Analysis Report
+Housing Price Analysis in Major Ontario Cities
+===============================================
+Data file  : data/clean/panel_city_year.csv  (48 rows, 10 columns)
+
+This report documents the structure, distributions, trends, correlations,
+and data quality of the panel dataset used for Bayesian multilevel modelling.
+Each section states its rationale so that the diagnostic choices are
+transparent and reproducible.
+
+============================================================
+SECTION 1 — Panel Structure
+============================================================
+Rationale: Verifying panel balance is the first step in any longitudinal
+analysis. An unbalanced panel can bias downstream estimates if missingness
+is systematic (e.g. smaller cities have fewer data points). We confirm that
+the intended 6-city x 8-year grid was fully constructed.
+
+Cities  : 6  (Hamilton, Kitchener-Cambridge-Waterloo, London, Ottawa-Gatineau, St. Catharines-Niagara, Toronto)
+Years   : 8  (2016 - 2023)
+Expected rows (balanced): 48
+Actual rows             : 48
+Rows with all model variables complete: 48  (100.0%)
+
+Observation count per city:
+  Hamilton                             8 rows
+  Kitchener-Cambridge-Waterloo         8 rows
+  London                               8 rows
+  Ottawa-Gatineau                      8 rows
+  St. Catharines-Niagara               8 rows
+  Toronto                              8 rows
+
+Observation count per year:
+  2016  6 rows
+  2017  6 rows
+  2018  6 rows
+  2019  6 rows
+  2020  6 rows
+  2021  6 rows
+  2022  6 rows
+  2023  6 rows
+
+============================================================
+SECTION 2 — Outcome Variable: Housing Price Index
+============================================================
+Rationale: Inspecting the outcome distribution before modelling is
+standard practice. The log transformation is motivated by (a) right-skew
+typical of nominal price indices, (b) multiplicative housing market
+dynamics where percentage changes are more interpretable, and (c) improved
+residual normality. City-level baseline differences motivate the random
+intercept per city in the Bayesian multilevel model.
+
+--- Raw price_index (base 100 = December 2016) ---
+  price_index:  n=48  min=96.617  median=110.125  mean=116.926  max=173.017  sd=20.046
+
+--- Log-transformed outcome (log_price_index) ---
+  log_price_index:  n=48  min=4.571  median=4.702  mean=4.749  max=5.153  sd=0.157
+
+City-level mean of log_price_index (higher = higher overall price level):
+  (Cities with higher means require larger random intercepts in the model.)
+  Ottawa-Gatineau                      4.8515
+  Kitchener-Cambridge-Waterloo         4.7877
+  London                               4.7854
+  St. Catharines-Niagara               4.7231
+  Hamilton                             4.6802
+  Toronto                              4.6648
+
+Annual mean log_price_index across all cities (temporal trend):
+  (A sustained upward trend motivates the time component in the model.)
+  2016  4.5849
+  2017  4.6366
+  2018  4.6595
+  2019  4.6776
+  2020  4.7234
+  2021  4.8571
+  2022  4.9306
+  2023  4.9206
+
+Full city x year table written to output/eda/log_price_index_city_year.csv
+
+============================================================
+SECTION 3 — Policy Rate (Bank of Canada overnight-rate target)
+============================================================
+Rationale: The policy rate is the main macro-level predictor and the one
+most directly linked to the housing-affordability narrative. Verifying the
+year-by-year values confirms the data captures the prolonged low-rate era
+(2016-2021) and the sharp tightening cycle (2022-2023). This range of
+variation gives the model strong signal to identify an interest rate effect.
+
+  policy_rate (annual mean, %):  n=8  min=0.250  median=1.051  mean=1.479  max=4.743  sd=1.457
+
+Annual values (this is a national variable — identical for all cities):
+  2016  0.5000%
+  2017  0.6981%
+  2018  1.4042%
+  2019  1.7500%
+  2020  0.5565%
+  2021  0.2500%
+  2022  1.9297%
+  2023  4.7432%
+
+Standardised form (policy_rate_z) used in the model:
+  policy_rate_z:  n=8  min=-0.892  median=-0.311  mean=0.000  max=2.369  sd=1.058
+
+============================================================
+SECTION 4 — International Student Enrolment by CMA
+============================================================
+Rationale: This is the predictor most directly tied to the policy question
+(Canada's international student cap). Understanding the CMA-level
+distribution, growth trend, and relative magnitudes is essential for
+interpreting model coefficients. If enrolment barely varies within cities
+or is dominated by Toronto, the enrolment effect may be hard to identify.
+
+  intl_students (annual count):  n=48  min=3708.000  median=13677.000  mean=24131.688  max=105729.000  sd=26049.600
+
+City-level mean annual international student enrolment:
+  Toronto                                 78116
+  Kitchener-Cambridge-Waterloo            21158
+  Ottawa-Gatineau                         17634
+  London                                  11809
+  Hamilton                                 8788
+  St. Catharines-Niagara                   7285
+
+Panel-wide total across all CMAs by year (growth trend):
+  2016  91905
+  2017  108882
+  2018  127812
+  2019  146166
+  2020  139683
+  2021  149778
+  2022  175854
+  2023  218241
+
+Full city x year table written to output/eda/intl_students_city_year.csv
+
+============================================================
+SECTION 5 — Housing Starts by CMA
+============================================================
+Rationale: Housing starts proxy the supply response to demand shocks.
+The model predicts that more starts moderate price growth. Documenting
+city-level construction activity confirms sufficient cross-city variation
+and flags cities where chronic supply constraints may amplify demand
+effects on prices — an important interaction context for results.
+
+  housing_starts (annual total units):  n=48  min=22.542  median=47.932  mean=125.914  max=571.046  sd=165.986
+
+City-level mean annual housing starts over the panel:
+  Toronto                                   485 units/year
+  Ottawa-Gatineau                           103 units/year
+  Kitchener-Cambridge-Waterloo               53 units/year
+  London                                     43 units/year
+  Hamilton                                   42 units/year
+  St. Catharines-Niagara                     30 units/year
+
+Panel-wide annual total housing starts (supply trend check):
+  2016  680
+  2017  717
+  2018  722
+  2019  636
+  2020  750
+  2021  844
+  2022  853
+  2023  842
+
+Full city x year table written to output/eda/housing_starts_city_year.csv
+
+============================================================
+SECTION 6 — Pairwise Correlations
+============================================================
+Rationale: Outcome-predictor correlations indicate which variables carry
+signal. Predictor-predictor correlations flag multicollinearity: high
+correlation (|r| > 0.7) between two predictors can inflate coefficient
+uncertainty and complicate interpretation of individual effects.
+
+Computed on 48 complete-case rows.
+
+                         log_price_index       policy_rate     intl_students    housing_starts
+  log_price_index                  1.000             0.454            -0.023            -0.146
+  policy_rate                      0.454             1.000             0.198             0.028
+  intl_students                   -0.023             0.198             1.000             0.953
+  housing_starts                  -0.146             0.028             0.953             1.000
+
+Full correlation matrix written to output/eda/correlation_matrix.csv
+
+============================================================
+SECTION 7 — Within-city Variation of Each Variable
+============================================================
+Rationale: Multilevel models identify slopes from within-unit time variation.
+A predictor that barely moves within any city over 8 years provides little
+leverage for slope estimation. Comparing within-city SD to between-city SD
+shows whether effects are identified primarily from cross-city differences
+(between variation) or from each city's own trend over time (within variation).
+
+log_price_index — within-city SD (how volatile is each city's price trend):
+  Ottawa-Gatineau                      0.2300
+  Kitchener-Cambridge-Waterloo         0.2013
+  London                               0.1500
+  St. Catharines-Niagara               0.1072
+  Hamilton                             0.0653
+  Toronto                              0.0621
+  Between-city SD of city means: 0.0718
+
+policy_rate — within-city SD (national variable, identical across cities):
+  1.4574  (all cities share the same national rate by construction)
+
+intl_students — within-city SD (does enrolment move within each CMA?):
+  Toronto                               16304.5 students/year
+  Kitchener-Cambridge-Waterloo           8984.1 students/year
+  St. Catharines-Niagara                 4104.6 students/year
+  Ottawa-Gatineau                        3900.8 students/year
+  London                                 3854.1 students/year
+  Hamilton                               2616.9 students/year
+  Between-city SD of city means: 26968.1
+
+housing_starts — within-city SD (does construction pace vary within cities?):
+  Toronto                                  61.6 units/year
+  Ottawa-Gatineau                          22.9 units/year
+  London                                   12.7 units/year
+  Kitchener-Cambridge-Waterloo             10.6 units/year
+  St. Catharines-Niagara                    5.3 units/year
+  Hamilton                                  4.7 units/year
+  Between-city SD of city means: 177.7
+
+============================================================
+SECTION 8 — Missingness
+============================================================
+Rationale: Missing data in a panel can bias results if not missing
+completely at random (MCAR). StatCan suppresses small-cell counts with
+'..' which tends to affect smaller cities — exactly those with lower
+housing activity. Locating which city-years are incomplete, and for
+which variables, allows an informed decision on imputation or exclusion
+and prevents silent list-wise deletion inside the model.
+
+Missing value counts by variable:
+  price_index                 0 missing  (0.0%)
+  log_price_index             0 missing  (0.0%)
+  policy_rate                 0 missing  (0.0%)
+  intl_students               0 missing  (0.0%)
+  housing_starts              0 missing  (0.0%)
+  policy_rate_z               0 missing  (0.0%)
+  intl_students_z             0 missing  (0.0%)
+  housing_starts_z            0 missing  (0.0%)
+
+No city-year cells are missing any model variable — panel is complete.
+
+===============================================
+END OF REPORT

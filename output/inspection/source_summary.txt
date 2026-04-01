@@ -6,11 +6,9 @@ Raw files found:
 - data/data_raw/Interest_rate.csv
 - data/data_raw/International_students.csv
 - data/data_raw/New_houses_built.csv
-- docs/MSE 718 Project Proposal Outline.txt
-- docs/MSE 718 Project Proposal Speaker Notes.txt
-- docs/MSE 718 Term Project Proposal - Group 6.pptx
+- docs/MSE 718 Course Project Final - Group 6.pptx
+- docs/MSE_718_Project_Report_Group_6.pdf
 - docs/PROJECT_PROPOSAL.pdf
-- docs/PROJECT_PROPOSAL_MINI.docx
 
 Most usable outcome source:
 - Housing_price_index.csv is the best housing-price source because its geography blocks include all six target CMAs: Ottawa-Gatineau, Ontario part, Ontario/Quebec 7; Toronto, Ontario 9; Hamilton, Ontario; St. Catharines-Niagara, Ontario; Kitchener-Cambridge-Waterloo, Ontario; London, Ontario.

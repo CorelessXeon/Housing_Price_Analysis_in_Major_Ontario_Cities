@@ -1,0 +1,55 @@
+"year","city","price_index"
+2016,"Hamilton",98.5666666666667
+2017,"Hamilton",102.258333333333
+2018,"Hamilton",103.558333333333
+2019,"Hamilton",104.233333333333
+2020,"Hamilton",107.291666666667
+2021,"Hamilton",116.1
+2022,"Hamilton",116.508333333333
+2023,"Hamilton",115.466666666667
+2024,"Hamilton",114.116666666667
+2016,"Kitchener-Cambridge-Waterloo",97.6166666666667
+2017,"Kitchener-Cambridge-Waterloo",103.05
+2018,"Kitchener-Cambridge-Waterloo",103.75
+2019,"Kitchener-Cambridge-Waterloo",105.525
+2020,"Kitchener-Cambridge-Waterloo",112.025
+2021,"Kitchener-Cambridge-Waterloo",139.5
+2022,"Kitchener-Cambridge-Waterloo",158.708333333333
+2023,"Kitchener-Cambridge-Waterloo",157.65
+2024,"Kitchener-Cambridge-Waterloo",155.191666666667
+2016,"London",98.5583333333333
+2017,"London",104.65
+2018,"London",109.833333333333
+2019,"London",113.158333333333
+2020,"London",116.675
+2021,"London",132
+2022,"London",147.191666666667
+2023,"London",145.55
+2024,"London",143.55
+2016,"Ottawa-Gatineau",99.225
+2017,"Ottawa-Gatineau",102.366666666667
+2018,"Ottawa-Gatineau",107.55
+2019,"Ottawa-Gatineau",113.408333333333
+2020,"Ottawa-Gatineau",126.508333333333
+2021,"Ottawa-Gatineau",154.925
+2022,"Ottawa-Gatineau",173.016666666667
+2023,"Ottawa-Gatineau",170.766666666667
+2024,"Ottawa-Gatineau",164.608333333333
+2016,"St. Catharines-Niagara",97.4083333333333
+2017,"St. Catharines-Niagara",103.25
+2018,"St. Catharines-Niagara",105.533333333333
+2019,"St. Catharines-Niagara",106.683333333333
+2020,"St. Catharines-Niagara",110.683333333333
+2021,"St. Catharines-Niagara",123.966666666667
+2022,"St. Catharines-Niagara",129.633333333333
+2023,"St. Catharines-Niagara",127.491666666667
+2024,"St. Catharines-Niagara",126.15
+2016,"Toronto",96.6166666666667
+2017,"Toronto",103.616666666667
+2018,"Toronto",103.458333333333
+2019,"Toronto",102.55
+2020,"Toronto",103.491666666667
+2021,"Toronto",110.416666666667
+2022,"Toronto",115.408333333333
+2023,"Toronto",115.058333333333
+2024,"Toronto",114.2

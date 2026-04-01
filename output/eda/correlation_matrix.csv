@@ -1,0 +1,5 @@
+"","log_price_index","policy_rate","intl_students","housing_starts"
+"log_price_index",1,0.454,-0.023,-0.146
+"policy_rate",0.454,1,0.198,0.028
+"intl_students",-0.023,0.198,1,0.953
+"housing_starts",-0.146,0.028,0.953,1

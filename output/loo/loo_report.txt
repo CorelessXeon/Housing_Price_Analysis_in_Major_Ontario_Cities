@@ -1,0 +1,118 @@
+LOO Cross-Validation Report
+===========================
+
+Model 1 (Base):
+  log_hpi ~ scale(intl_students) + policy_rate + (1 + scale(intl_students) | cma)
+Model 2 (Supply-Adjusted):
+  log_hpi ~ scale(intl_students) + policy_rate + scale(house_supply)
+  + (1 + scale(intl_students) + scale(house_supply) | cma)
+
+--- Convergence Diagnostics ---
+  Thresholds: R-hat < 1.01, Bulk ESS > 400.
+  Model 1: max R-hat = 1.0040, min Bulk ESS = 747, min Tail ESS = 1034  [PASS]
+  Model 2: max R-hat = 1.0046, min Bulk ESS = 738, min Tail ESS = 866  [PASS]
+  Full parameter-level diagnostics: output/loo/convergence_diagnostics.csv
+
+--- LOO Summary: Model 1 ---
+
+Computed from 4000 by 48 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo     53.4  5.8
+p_loo        11.7  2.4
+looic      -106.8 11.7
+------
+MCSE of elpd_loo is NA.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 1.1]).
+
+Pareto k diagnostic values:
+                         Count Pct.    Min. ESS
+(-Inf, 0.7]   (good)     46    95.8%   92      
+   (0.7, 1]   (bad)       2     4.2%   <NA>    
+   (1, Inf)   (very bad)  0     0.0%   <NA>    
+See help('pareto-k-diagnostic') for details.
+
+--- LOO Summary: Model 2 ---
+
+Computed from 4000 by 48 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo     49.4  5.9
+p_loo        14.7  2.7
+looic       -98.7 11.8
+------
+MCSE of elpd_loo is NA.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.2, 1.1]).
+
+Pareto k diagnostic values:
+                         Count Pct.    Min. ESS
+(-Inf, 0.7]   (good)     44    91.7%   285     
+   (0.7, 1]   (bad)       4     8.3%   <NA>    
+   (1, Inf)   (very bad)  0     0.0%   <NA>    
+See help('pareto-k-diagnostic') for details.
+
+--- Pareto-k Diagnostics ---
+  Pareto-k > 0.7 flags observations that are too influential for the PSIS
+  approximation to be reliable (exact LOO would be needed for those points).
+  Model 1: 2 observation(s) with Pareto-k > 0.7
+  Model 2: 4 observation(s) with Pareto-k > 0.7
+
+--- Model Comparison (loo_compare) ---
+  The first row is the preferred model (highest ELPD).
+  elpd_diff / se_diff > 2 is a conventional threshold for a meaningful
+  difference in predictive accuracy.
+     elpd_diff se_diff
+fit1  0.0       0.0   
+fit2 -4.0       2.3   
+
+--- Omitted Variable Bias Assessment ---
+  Model 1  scale(intl_students): 0.2111  [0.0877, 0.3862]
+  Model 2  scale(intl_students): 0.2141  [0.0920, 0.3765]
+  Shift after adding house_supply: 0.0030
+
+  The student coefficient is stable across models (shift < 0.05 log-HPI
+  units). Adding housing supply did not materially change the student
+  effect, suggesting limited omitted variable bias from supply in the
+  baseline model.
+
+--- LOO Boxplot Interpretation ---
+  Each box covers the middle 50% of ELPD scores across the 8 years for
+  that city. Dots outside the whiskers are outlier city-years — specific
+  years the model predicted unusually poorly. This does NOT mean the model
+  is bad overall; it means that year was structurally unusual (e.g. a sharp
+  rate hike or COVID shock) that no smooth trend could anticipate.
+  With only 8 years per city, even one anomalous year appears as an outlier.
+
+  Outlier city-years identified (red labels on plot):
+    Hamilton  NA  (elpd = 1.174)
+    Kitchener-Cambridge-Waterloo  NA  (elpd = -3.235)
+    London  NA  (elpd = 0.358)
+    Toronto  NA  (elpd = 0.622)
+
+--- City-Specific Student Slopes (Model 1 random effects) ---
+  Population-level mean slope: 0.2111
+  Interpretation: a 1 SD increase in international students is associated
+  with approximately 21.1% change in HPI on average across all CMAs.
+  City deviations from that average:
+
+  CMA                                     Slope      Dev.             95% CI
+  ---                                     -----      ----             ------
+  Ottawa-Gatineau                        1.5555   +1.3444  [1.0483, 1.9675]
+  London                                 1.1333   +0.9222  [0.6601, 1.5336]
+  Hamilton                               0.8546   +0.6435  [0.2437, 1.4335]
+  St. Catharines-Niagara                 0.7807   +0.5695  [0.3430, 1.1679]
+  Kitchener-Cambridge-Waterloo           0.6165   +0.4054  [0.4203, 0.7936]
+  Toronto                                0.1333   -0.0778  [0.0222, 0.2312]
+
+  Cities where the 95% CI excludes zero have a statistically meaningful
+  student effect in that specific market.
+
+Output files:
+  output/loo/convergence_diagnostics.csv   — R-hat and ESS for all parameters
+  output/loo/posterior_fixef_summary.csv   — fixed effects mean and 95% CI, both models
+  output/loo/loo1_pointwise_by_cma.png     — pointwise ELPD boxplot by CMA
+  output/loo/city_slopes.png             — city-specific partial pooling slopes
+  output/loo/city_slopes.csv             — city slopes table
+  output/loo/pooling_comparison.png      — no / complete / partial pooling comparison
+  output/loo/loo_comparison.csv          — loo_compare() table
+  output/loo/loo_report.txt              — this report

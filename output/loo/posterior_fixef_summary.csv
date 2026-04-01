@@ -1,0 +1,8 @@
+"model","parameter","mean","ci_lo","ci_hi"
+"Model 1 (Base)","Intercept",4.8982,4.4884,5.3305
+"Model 1 (Base)","intl_students_s",0.2111,0.0877,0.3862
+"Model 1 (Base)","policy_rate",-0.0343,-0.0616,-0.0026
+"Model 2 (Supply-Adjusted)","Intercept",4.9343,4.5186,5.3431
+"Model 2 (Supply-Adjusted)","intl_students_s",0.2141,0.092,0.3765
+"Model 2 (Supply-Adjusted)","policy_rate",-0.0166,-0.0527,0.0271
+"Model 2 (Supply-Adjusted)","house_supply_s",0.1958,-0.1618,0.6608

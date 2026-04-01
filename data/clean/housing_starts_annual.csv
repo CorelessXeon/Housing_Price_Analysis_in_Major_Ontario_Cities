@@ -1,0 +1,55 @@
+"year","city","housing_starts"
+2016,"Hamilton",39.576
+2017,"Hamilton",35.197
+2018,"Hamilton",43.313
+2019,"Hamilton",38.081
+2020,"Hamilton",41.154
+2021,"Hamilton",50.898
+2022,"Hamilton",42.252
+2023,"Hamilton",44.513
+2024,"Hamilton",31.494
+2016,"Kitchener-Cambridge-Waterloo",48.391
+2017,"Kitchener-Cambridge-Waterloo",46.494
+2018,"Kitchener-Cambridge-Waterloo",37.468
+2019,"Kitchener-Cambridge-Waterloo",65.942
+2020,"Kitchener-Cambridge-Waterloo",44.996
+2021,"Kitchener-Cambridge-Waterloo",67.425
+2022,"Kitchener-Cambridge-Waterloo",57.848
+2023,"Kitchener-Cambridge-Waterloo",56.602
+2024,"Kitchener-Cambridge-Waterloo",40.874
+2016,"London",37.465
+2017,"London",47.474
+2018,"London",32.605
+2019,"London",40.654
+2020,"London",51.356
+2021,"London",67.747
+2022,"London",40.795
+2023,"London",26.291
+2024,"London",49.948
+2016,"Ottawa-Gatineau",62.98
+2017,"Ottawa-Gatineau",90.305
+2018,"Ottawa-Gatineau",90.01
+2019,"Ottawa-Gatineau",92.871
+2020,"Ottawa-Gatineau",119.667
+2021,"Ottawa-Gatineau",123.835
+2022,"Ottawa-Gatineau",132.346
+2023,"Ottawa-Gatineau",110.361
+2024,"Ottawa-Gatineau",94.613
+2016,"St. Catharines-Niagara",23.396
+2017,"St. Catharines-Niagara",26.624
+2018,"St. Catharines-Niagara",22.542
+2019,"St. Catharines-Niagara",33.523
+2020,"St. Catharines-Niagara",29.579
+2021,"St. Catharines-Niagara",31.822
+2022,"St. Catharines-Niagara",37.665
+2023,"St. Catharines-Niagara",33.297
+2024,"St. Catharines-Niagara",20.867
+2016,"Toronto",467.819
+2017,"Toronto",470.927
+2018,"Toronto",496.33
+2019,"Toronto",364.498
+2020,"Toronto",463.615
+2021,"Toronto",502.331
+2022,"Toronto",541.956
+2023,"Toronto",571.046
+2024,"Toronto",451.693

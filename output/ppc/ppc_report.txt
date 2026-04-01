@@ -1,0 +1,72 @@
+Posterior Predictive Check Report
+==================================
+
+Models assessed:
+  Model 1 (Base):
+    log_hpi ~ intl_students_s + policy_rate + (1 + intl_students_s | cma)
+  Model 2 (Supply-Adjusted):
+    log_hpi ~ intl_students_s + policy_rate + house_supply_s
+    + (1 + intl_students_s + house_supply_s | cma)
+    Density overlay: output/ppc/ppc_model2_density_by_cma.png
+
+Simulation:
+  500 replicated datasets drawn from p(y_rep | y, X) via posterior_predict().
+  Interval plots use 50% and 95% posterior predictive intervals.
+  Density plots overlay 50 randomly selected draws against the observed
+  distribution for each CMA.
+
+--- Coverage Statistics ---
+  Expected: ~50% of observations inside the 50% PI,
+            ~95% of observations inside the 95% PI.
+  Systematic over-coverage  => model too uncertain (bands too wide).
+  Systematic under-coverage => model overconfident (misses real outcomes).
+  Note: with only 8 obs per CMA, city-level coverage is noisy — focus on
+  the overall across-CMA pattern.
+
+  Overall 95% coverage — Model 1: 97.9%  |  Model 2: 97.9%
+
+  Model 1 (Base)
+  CMA                                      N    50% cov.    95% cov.
+  ---                                      -    --------    --------
+  Hamilton                                 8      100.0%      100.0%
+  Kitchener-Cambridge-Waterloo             8       37.5%       87.5%
+  London                                   8       62.5%      100.0%
+  Ottawa-Gatineau                          8       37.5%      100.0%
+  St. Catharines-Niagara                   8       75.0%      100.0%
+  Toronto                                  8       87.5%      100.0%
+
+  Model 2 (Supply-Adjusted)
+  CMA                                      N    50% cov.    95% cov.
+  ---                                      -    --------    --------
+  Hamilton                                 8      100.0%      100.0%
+  Kitchener-Cambridge-Waterloo             8       62.5%       87.5%
+  London                                   8       75.0%      100.0%
+  Ottawa-Gatineau                          8       25.0%      100.0%
+  St. Catharines-Niagara                   8       75.0%      100.0%
+  Toronto                                  8      100.0%      100.0%
+
+--- Interpretation Guide ---
+
+  Interval plots (Section 2 — time series view):
+    PASS    — Red points inside 95% bands for all CMAs and most years.
+    CONCERN — Points consistently outside the band for a specific CMA:
+              systematic bias, possibly a missing city-specific trend or a
+              structural break (e.g. the 2022 rate spike) the predictors
+              cannot anticipate.
+    MODEL 2 vs MODEL 1 — If Model 2's bands are narrower and observations
+              are better centred, adding house_supply_s improved the fit.
+
+  Density overlay (Section 3 — distributional view):
+    PASS    — Observed density (red) lies within the cloud of simulated
+              densities (blue) for all CMAs.
+    CONCERN — Observed density has a different shape, location, or heavier
+              tails: the model misrepresents the marginal distribution of
+              log(HPI) for that city.
+
+Output files:
+  output/ppc/ppc_model1_intervals.png       — grouped interval plot, Model 1
+  output/ppc/ppc_model2_intervals.png       — grouped interval plot, Model 2
+  output/ppc/ppc_model1_density_by_cma.png  — density overlay by CMA, Model 1
+  output/ppc/ppc_model2_density_by_cma.png  — density overlay by CMA, Model 2
+  output/ppc/ppc_coverage_stats.csv         — empirical coverage table
+  output/ppc/ppc_report.txt                 — this report
